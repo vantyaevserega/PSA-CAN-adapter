@@ -12,7 +12,7 @@ const int UD_XC = 4;
 
 const int REVERSEPIN = 8;
 const int ILLUMINATEPIN = 9;
-
+int vv = 0;
 int prevButton = 0;
 int currentButton = 0;
 int prevScroll = 0;
@@ -20,10 +20,11 @@ int prevScroll2 = 0;
 int prevScroll3 = 0;
 bool prevReverse;
 bool prevIlluminate;
+int prevResist = 0;
 void setup() 
 {
   Serial.begin(115200);
-  Serial.println("Start");
+  Serial.println("Start INIT");
   mcp2515.reset();
   mcp2515.setConfigMode();
   /*
@@ -33,7 +34,10 @@ void setup()
   mcp2515.setFilter(MCP2515::RXF3, false, 0x276);
   */  
   mcp2515.setBitrate(CAN_125KBPS, MCP_8MHZ);  
-  mcp2515.setNormalMode();
+  while (mcp2515.setNormalMode() != MCP2515::ERROR_OK) 
+  {
+    delay(100);
+  }
 
   // инициализация резистивных выводов  
   pinMode(CS_XC, OUTPUT);
@@ -47,6 +51,7 @@ void setup()
   pinMode(ILLUMINATEPIN, OUTPUT);
   digitalWrite(REVERSEPIN, LOW); 
   digitalWrite(ILLUMINATEPIN, LOW); 
+    Serial.println("Start LOOP");
 }
 
 void loop() 
@@ -122,6 +127,7 @@ void loop()
       {
         currentButton = 12;      
       }
+           Serial.print("Buttons 1 ");
       
       log(canMsg, true);
     }
@@ -157,6 +163,7 @@ void loop()
       }  
 
       prevScroll3 = canMsg.data[3];
+            Serial.print("Buttons 2 ");
       log(canMsg, true);
     }    
 
@@ -180,7 +187,8 @@ void loop()
             digitalWrite(REVERSEPIN, LOW);          
           }
         }
-        
+
+              Serial.print("Reverse ");
       log(canMsg, true);    
     }    
 
@@ -188,6 +196,7 @@ void loop()
     if(canMsg.can_id == 0x276 && canMsg.can_dlc > 4)
     {  
             isHandled = true;    
+            Serial.print("Time ");
       log(canMsg, true);
 
       float coef = (180 - ((canMsg.data[1] & 0b00001111)-1)*30+(canMsg.data[2] & 0b00011111))/180.0; 
@@ -213,7 +222,7 @@ void loop()
 
     if(!isHandled)
     {
-      log(canMsg, true);
+      log(canMsg, false);
     }
  }
   
@@ -227,6 +236,7 @@ void loop()
 
 void pressButton(int value)
 {
+   Serial.println("button pressed " + value);
   if(value == 0)
   {
     setResistance(0);
@@ -238,13 +248,9 @@ void pressButton(int value)
 }
 
 void log(struct can_frame can, bool isParsed)
-{
-    if(isParsed)
-    {
-      Serial.print("Defined ");
-    }
-    
+{    
     Serial.print(can.can_id, HEX); // print ID
+    Serial.print(" ");
     Serial.print(can.can_dlc, HEX); // print DLC
     Serial.print(" ");
     
@@ -259,20 +265,23 @@ void log(struct can_frame can, bool isParsed)
 
 void setResistance(int percent) 
 { 
-  digitalWrite(UD_XC, LOW); // выбираем понижение
   digitalWrite(CS_XC, LOW); // выбираем потенциометр X9C
-  for (int i=0; i<100; i++) 
-  { // т.к. потенциометр имеет 100 доступных позиций
+    digitalWrite(UD_XC, LOW); // выбираем понижение
+  
+  for (int i=0; i<99; i++) 
+  { 
+    // т.к. потенциометр имеет 100 доступных позиций
     digitalWrite(INC_XC, LOW);
     delayMicroseconds(1);
     digitalWrite(INC_XC, HIGH);
     delayMicroseconds(1);
   }
 
-  // Поднимаем сопротивление до нужного:
   digitalWrite(UD_XC, HIGH);
+  
   for (int i=0; i<percent; i++) 
-  {
+  { 
+    // т.к. потенциометр имеет 100 доступных позиций
     digitalWrite(INC_XC, LOW);
     delayMicroseconds(1);
     digitalWrite(INC_XC, HIGH);
