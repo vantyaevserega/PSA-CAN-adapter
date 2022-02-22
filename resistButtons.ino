@@ -10,7 +10,7 @@ const int CS_XC = 2;
 const int INC_XC = 3;
 const int UD_XC = 4;
 
-int confPressedTime;
+unsigned long confPressedTime;
 bool isConfig = false;
 const int REVERSEPIN = 8;
 const int ILLUMINATEPIN = 9;
@@ -19,22 +19,15 @@ int prevButton = 0;
 int currentButton = 0;
 int prevScroll = 0;
 int prevScroll2 = 0;
-int prevScroll3 = 0;
 bool prevReverse;
 bool prevIlluminate;
 int prevResist = 0;
 void setup() 
 {
-  Serial.begin(115200);
-  Serial.println("Start");
+  Serial.begin(9600);
+  Serial.println("Start work");
   mcp2515.reset();
-  //mcp2515.setConfigMode();
-  /*
-  mcp2515.setFilter(MCP2515::RXF0, false, 0x21F);
-  mcp2515.setFilter(MCP2515::RXF1, false, 0x0A2);
-  mcp2515.setFilter(MCP2515::RXF2, false, 0x0F6);
-  mcp2515.setFilter(MCP2515::RXF3, false, 0x276);
-  */  
+
   mcp2515.setBitrate(CAN_125KBPS, MCP_8MHZ);  
   mcp2515.setNormalMode();
 
@@ -54,37 +47,67 @@ void setup()
 
 void loop() 
 {
+  // обработка серийного порта, для конфигурации
   if (Serial.available() > 0) 
   {
     int data = Serial.parseInt();
     if(data == 100)
     {
+      Serial.println("Configuration started");
       isConfig = true;
     }
 
     if(data == 200)
     {
+      Serial.println("Configuration finished");
       isConfig = false;
-    }
-
-    if(currentButton > 0 && millis() - confPressedTime > 5000)
-    {
       currentButton = 0;
     }
-    
-    if(data > 0 && data < 15)
+
+    if(isConfig && data == 16)
+    {
+      digitalWrite(REVERSEPIN, HIGH);
+      Serial.println("reverse high");      
+    }    
+
+    if(isConfig && data == 17)
+    {
+      digitalWrite(REVERSEPIN, LOW);
+      Serial.println("reverse low");      
+    }    
+
+    if(isConfig && data == 18)
+    {
+      digitalWrite(ILLUMINATEPIN, HIGH);
+      Serial.println("ILUMINATEPIN high");      
+    }    
+
+    if(isConfig && data == 19)
+    {
+      digitalWrite(ILLUMINATEPIN, LOW);
+      Serial.println("ILUMINATEPIN low");      
+    }    
+        
+    if(isConfig && data > 0 && data < 15)
     {
       confPressedTime = millis();
       currentButton = data;
+      Serial.print("Button pressed "); Serial.println(data);      
     }    
   }
-  
+
+  if(currentButton > 0 && millis() - confPressedTime > 5000)
+  {
+      currentButton = 0;
+      Serial.println("Button released");      
+  }
+
+  // обработка шины автомобиля
   if (mcp2515.readMessage(&canMsg) == MCP2515::ERROR_OK && !isConfig) 
   {    
-    bool isHandled = false;
+    // блок конпок, основной
     if(canMsg.can_id == 0x21F && canMsg.can_dlc == 3)
     {
-      isHandled = true;
       if(currentButton & 0b111 > 0)
       {
         currentButton = (currentButton >> 3) << 3;
@@ -121,14 +144,14 @@ void loop()
         currentButton = 4;      
       }
             
-      log(canMsg, true);
+      log(canMsg);
       Serial.print("Btn "); Serial.println(currentButton);  
       Serial.print("Scr1 "); Serial.println(prevScroll); 
     }
-    
+
+    // второй набор кнопок
     if(canMsg.can_id == 0xA2 && canMsg.can_dlc == 5)
     {
-      isHandled = true;
       if(currentButton > 7)
       {
         currentButton = currentButton & 0b111;
@@ -146,47 +169,34 @@ void loop()
 
       prevScroll2 = canMsg.data[0];       
 
-      //if(canMsg.data[3] > prevScroll3 || prevScroll3 - canMsg.data[3] > 200)
-      //{
-      //  currentButton = 15;
-      //}  
-
-      //if(canMsg.data[3] < prevScroll3 || prevScroll3 - canMsg.data[3] < -200)
-      //{
-      //  currentButton = 16;
-      //}  
-
-      if(canMsg.data[1]  == 4) // 
+      if(canMsg.data[1]  == 4)
       {
         currentButton = 10;      
       }
 
-      if(canMsg.data[0] == 8) //
+      if(canMsg.data[0] == 8)
       {
         currentButton = 11;      
       }
 
-      if(canMsg.data[1]  == 16) // 
+      if(canMsg.data[1]  == 16)
       {
         currentButton = 12;      
       }
 
-      if(canMsg.data[0] == 32) //
+      if(canMsg.data[0] == 32)
       {
         currentButton = 13;      
       }
 
-      //prevScroll3 = canMsg.data[3];
-      log(canMsg, true);
-      Serial.print("Btn "); Serial.println(currentButton);  
-      Serial.print("Scr3 "); Serial.println(prevScroll3); 
+      log(canMsg);
+      Serial.print("Btn2 "); Serial.println(currentButton);  
       Serial.print("Scr2 "); Serial.println(prevScroll2); 
     }    
 
     // задний ход все верно
     if(canMsg.can_id == 0x0F6 && canMsg.can_dlc == 8)
-    {
-        isHandled = true;      
+    {   
         if (canMsg.data[7] & 0b10000000) 
         {
           if(!prevReverse)
@@ -204,15 +214,14 @@ void loop()
           }
         }
                 
-      log(canMsg, true);    
+      log(canMsg);    
       Serial.print("Reverse "); Serial.println(prevReverse);
     }    
 
-    // время
+    // время, для обработки подсветки
     if(canMsg.can_id == 0x3f6 && canMsg.can_dlc == 7)
-    {  
-      isHandled = true;  
-      log(canMsg, true);
+    {
+      log(canMsg);
       float day = ((canMsg.data[3] & 0b00001111) << 4) + (canMsg.data[4] >> 4);
       float month = canMsg.data[4] & 0b00001111;
       float year = canMsg.data[5] + 2000;
@@ -248,38 +257,37 @@ void loop()
   }
 }
 
+// нажатие кнопки
 void pressButton(int value)
 {
   if(value == 0)
   {
     setResistance(0);
+    Serial.println("All buttons released");
   }
   else
   {
     setResistance(startR + value*stepR);
+    Serial.print("Button "); Serial.print(value); Serial.println(" pressed");
   }
 }
 
-void log(struct can_frame can, bool isParsed)
+// логирование сообщения от шины автомобиля
+void log(struct can_frame can)
 {
-    if(isParsed)
-    {
-      Serial.print("Defined ");
-    }
-    
-    Serial.print(can.can_id, HEX); // print ID
-    Serial.print(can.can_dlc, HEX); // print DLC
+    Serial.print(can.can_id, HEX); // ID
     Serial.print(" ");
-    
+    Serial.print(can.can_dlc, HEX); // размер
     for (int i = 0; i<can.can_dlc; i++)  
     {
-      Serial.print(can.data[i],HEX);
       Serial.print(" ");
+      Serial.print(can.data[i],HEX);
     }
 
     Serial.println("");
 }
 
+// изменить сопротивление для резистивных кнопок
 void setResistance(int percent) 
 { 
   digitalWrite(CS_XC, LOW); // выбираем потенциометр X9C
