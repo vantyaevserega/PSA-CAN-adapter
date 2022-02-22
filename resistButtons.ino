@@ -3,13 +3,14 @@
 
 struct can_frame canMsg;
 MCP2515 mcp2515(10);
-
+const int buttonDelay = 250;
 const int startR  = 3; 
 const int stepR = 4;
 const int CS_XC = 2;
 const int INC_XC = 3;
 const int UD_XC = 4;
 
+unsigned long prevChangeButtonState;
 unsigned long confPressedTime;
 bool isConfig = false;
 const int REVERSEPIN = 8;
@@ -252,8 +253,32 @@ void loop()
   // если необходимо - нажимаем кнопку
   if(currentButton != prevButton)
   {
-    pressButton(currentButton);
-    prevButton = currentButton;
+    if( millis() - prevChangeButtonState >= buttonDelay)
+    {
+      pressButton(currentButton);
+      if(currentButton > 0)
+      {
+        prevChangeButtonState = millis();
+      }
+      else
+      {
+        prevChangeButtonState = 0;
+      }
+    
+      prevButton = currentButton;
+    }
+  }
+  else
+  {
+    // долгое нажатие
+    if(currentButton > 0)
+    {
+      prevChangeButtonState = millis();
+    }
+    else
+    {
+      prevChangeButtonState = 0;
+    }
   }
 }
 
