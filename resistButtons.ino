@@ -1,15 +1,35 @@
+#include <DigiPotX9Cxxx.h>
 #include <mcp2515.h>
 #include <SPI.h>
 
+struct DashboardState
+{
+  byte MotorState = 0; // 0 заглушен, 1 запуск, 2 работает, 3 останавливается
+  bool GeneratorState = 0; // 1 работает
+  byte IgnitionState = 0; // 0 выключено, 1 включено, 2 запуск двигателя
+  int CoolantTemperature = 0; // -40 .. +215
+  unsigned long Odometer = 0; // в км * 10
+  int ExternalTemperature = 0; // -40 .. 87.5
+  bool IsReverseGear = false;
+  bool PassengerAirbagState = false;
+  byte BlinkersState = 0; // 1 правый, 2 левый, 3 оба
+  bool WipingState = false; // работают дворники
+  byte WheelPosition = 0; // 1 right, 2 left 
+  byte DoorsState = 0; // FL FR RL RR  T H RW FC двери, багажник, капот, заднее стекло, крышка бензобака
+  bool ThreeDoors = false;
+};
+
+struct DashboardState State;
 struct can_frame canMsg;
 MCP2515 mcp2515(10);
-const int buttonDelay = 250;
+const int buttonDelay = 150;
 const int startR  = 3; 
 const int stepR = 4;
 const int CS_XC = 2;
 const int INC_XC = 3;
 const int UD_XC = 4;
-
+DigiPot pot(INC_XC,UD_XC,CS_XC);
+struct can_frame s10C;
 unsigned long prevChangeButtonState;
 unsigned long confPressedTime;
 bool isConfig = false;
@@ -21,10 +41,22 @@ int currentButton = 0;
 int prevScroll = 0;
 int prevScroll2 = 0;
 bool prevReverse;
+int pressTime = 0;
 bool prevIlluminate;
 int prevResist = 0;
+unsigned long sT = 0;
 void setup() 
 {
+  s10C.can_id = 0x10C;
+  s10C.can_dlc = 7;
+  s10C.data[0] = 0x00;
+  s10C.data[1] = 0x00;
+  s10C.data[2] = 0x10;
+  s10C.data[3] = 0x00;
+  s10C.data[4] = 0x00;
+  s10C.data[5] = 0x00;
+  s10C.data[6] = 0x00; //10C — window control; https://www.drive2.ru/l/469794106709639308/
+
   Serial.begin(9600);
   Serial.println("Start work");
   mcp2515.reset();
@@ -33,25 +65,28 @@ void setup()
   mcp2515.setNormalMode();
 
   // инициализация резистивных выводов  
-  pinMode(CS_XC, OUTPUT);
-  pinMode(INC_XC, OUTPUT);
-  pinMode(UD_XC, OUTPUT);
-  digitalWrite(CS_XC, HIGH);
-  digitalWrite(INC_XC, HIGH); 
-  digitalWrite(UD_XC, HIGH); 
-
+  pot.reset();
+  pot.set(99);
+  
   pinMode(REVERSEPIN, OUTPUT);
   pinMode(ILLUMINATEPIN, OUTPUT);
   digitalWrite(REVERSEPIN, LOW); 
-  digitalWrite(ILLUMINATEPIN, LOW); 
+  digitalWrite(ILLUMINATEPIN, LOW);
 }
 
 void loop() 
 {
   // обработка серийного порта, для конфигурации
-  if (Serial.available() > 0) 
+  if ((millis() - sT > 5000 || isConfig) && Serial.available() > 0) 
   {
     int data = Serial.parseInt();
+    if(data == 300)
+    {
+      Serial.println("Send windows up command");
+      mcp2515.sendMessage(&s10C); //закрываем окна
+      mcp2515.sendMessage(&s10C);
+    }
+    
     if(data == 100)
     {
       Serial.println("Configuration started");
@@ -89,23 +124,49 @@ void loop()
       Serial.println("ILUMINATEPIN low");      
     }    
         
-    if(isConfig && data > 0 && data < 15)
+    if(data > 0 && data <= 99)
     {
       confPressedTime = millis();
       currentButton = data;
-      Serial.print("Button pressed "); Serial.println(data);      
-    }    
+      currentButton = data > 40 ? data - 40 : data;
+      pressTime = data > 40 ? 1 : 1500;
+      }    
+
+      sT = millis();
   }
 
-  if(currentButton > 0 && millis() - confPressedTime > 5000)
+  if(currentButton > 0 && millis() - confPressedTime > pressTime)
   {
-      currentButton = 0;
-      Serial.println("Button released");      
+      currentButton = 0;      
   }
 
   // обработка шины автомобиля
   if (mcp2515.readMessage(&canMsg) == MCP2515::ERROR_OK && !isConfig) 
   {    
+    // состояние дверей
+    if(canMsg.can_id == 0x220)
+    {  
+      State.DoorsState = canMsg.data[0];
+      State.ThreeDoors = canMsg.data[1] >> 7 > 0;
+    }
+    
+    // сообщение
+    if(canMsg.can_id == 0x18)
+    {  
+      //passenger_airbag_state = (canMsg.data[0] >> 7) == 1;
+    }
+    
+    // сообщение
+    if(canMsg.can_id == 0x1A1)
+    {  
+    }
+    
+    // бортовые компьютеры
+    if(canMsg.can_id == 0x221 || canMsg.can_id == 0x261 || canMsg.can_id == 0x2A1)
+    {
+      //bool trip_btn_pressed = canMsg.can_id == 0x221 && (canMsg.data[0] & 0x0F) == 0x08;   
+    }
+    
     // блок конпок, основной
     if(canMsg.can_id == 0x21F && canMsg.can_dlc == 3)
     {
@@ -196,7 +257,7 @@ void loop()
     }    
 
     // задний ход все верно
-    if(canMsg.can_id == 0x0F6 && canMsg.can_dlc == 8)
+    if(canMsg.can_id == 0xF6 && canMsg.can_dlc == 8)
     {   
         if (canMsg.data[7] & 0b10000000) 
         {
@@ -223,12 +284,13 @@ void loop()
     if(canMsg.can_id == 0x3f6 && canMsg.can_dlc == 7)
     {
       log(canMsg);
-      float day = ((canMsg.data[3] & 0b00001111) << 4) + (canMsg.data[4] >> 4);
-      float month = canMsg.data[4] & 0b00001111;
-      float year = canMsg.data[5] + 2000;
+      int day = ((canMsg.data[3] & 0b00001111) << 4) + (canMsg.data[4] >> 4) + 1;
+      int month = canMsg.data[4] & 0b00001111 + 1;
+      int year = canMsg.data[5] + 2000 + 1;
       float coef = (180 - (month-1)*30+day)/180.0; 
       coef = coef < 0 ? -coef : coef;
-      float currentTime = ((canMsg.data[0] << 12) + (canMsg.data[1] << 4) + (canMsg.data[2] >> 4))/3600.0;
+      long tLong = ((canMsg.data[0] << 12) + (canMsg.data[1] << 4) + (canMsg.data[2] >> 4));
+      float currentTime = tLong/3600.0;
       if(currentTime < 3.5 + 6.0/coef || currentTime > 21.5 - 5.5/coef)
       {
         if(!prevIlluminate)
@@ -253,6 +315,7 @@ void loop()
   // если необходимо - нажимаем кнопку
   if(currentButton != prevButton)
   {
+    Serial.println(millis() - prevChangeButtonState);
     if( millis() - prevChangeButtonState >= buttonDelay)
     {
       pressButton(currentButton);
@@ -273,6 +336,8 @@ void loop()
     // долгое нажатие
     if(currentButton > 0)
     {
+          Serial.println("long");
+
       prevChangeButtonState = millis();
     }
     else
@@ -288,12 +353,12 @@ void pressButton(int value)
   if(value == 0)
   {
     setResistance(0);
-    Serial.println("All buttons released");
+  Serial.println("rel");
   }
   else
   {
-    setResistance(startR + value*stepR);
-    Serial.print("Button "); Serial.print(value); Serial.println(" pressed");
+    setResistance(value);
+    Serial.println("press");
   }
 }
 
@@ -315,28 +380,6 @@ void log(struct can_frame can)
 // изменить сопротивление для резистивных кнопок
 void setResistance(int percent) 
 { 
-  digitalWrite(CS_XC, LOW); // выбираем потенциометр X9C
-    digitalWrite(UD_XC, LOW); // выбираем понижение
-  
-  for (int i=0; i<99; i++) 
-  { 
-    // т.к. потенциометр имеет 100 доступных позиций
-    digitalWrite(INC_XC, LOW);
-    delayMicroseconds(1);
-    digitalWrite(INC_XC, HIGH);
-    delayMicroseconds(1);
-  }
-
-  digitalWrite(UD_XC, HIGH);
-  
-  for (int i=0; i<percent; i++) 
-  { 
-    // т.к. потенциометр имеет 100 доступных позиций
-    digitalWrite(INC_XC, LOW);
-    delayMicroseconds(1);
-    digitalWrite(INC_XC, HIGH);
-    delayMicroseconds(1);
-  }
-
-  digitalWrite(CS_XC, HIGH);
+//      pot.set(99);
+      if(percent>0)pot.set(percent*2); else pot.set(99);
 }
