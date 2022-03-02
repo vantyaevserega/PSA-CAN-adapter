@@ -44,6 +44,7 @@ bool prevReverse;
 int pressTime = 0;
 bool prevIlluminate;
 int prevResist = 0;
+byte debug = 0;
 unsigned long sT = 0;
 void setup() 
 {
@@ -57,7 +58,7 @@ void setup()
   s10C.data[5] = 0x00;
   s10C.data[6] = 0x00; //10C — window control; https://www.drive2.ru/l/469794106709639308/
 
-  Serial.begin(9600);
+  Serial.begin(115200);
   Serial.println("Start work");
   mcp2515.reset();
 
@@ -80,59 +81,81 @@ void loop()
   if ((millis() - sT > 5000 || isConfig) && Serial.available() > 0) 
   {
     int data = Serial.parseInt();
+    if(data == 102)
+    {
+      debug = 0;
+    }
+    else
+    if(data == 103)
+    {
+      debug = 1;
+    }
+    else
+    if(data == 104)
+    {
+      debug = 2;
+    }
+    else
     if(data == 300)
     {
-      Serial.println("Send windows up command");
+      if(debug>0)
+        Serial.println("Send windows up command");
       mcp2515.sendMessage(&s10C); //закрываем окна
       mcp2515.sendMessage(&s10C);
     }
-    
+    else
     if(data == 100)
     {
-      Serial.println("Configuration started");
+      if(debug>0)
+        Serial.println("Configuration started");
       isConfig = true;
     }
-
+    else
     if(data == 200)
     {
-      Serial.println("Configuration finished");
+      if(debug>0)
+        Serial.println("Configuration finished");
       isConfig = false;
       currentButton = 0;
     }
-
+    else
     if(isConfig && data == 16)
     {
       digitalWrite(REVERSEPIN, HIGH);
-      Serial.println("reverse high");      
+      if(debug>0)
+        Serial.println("reverse high");      
     }    
-
+    else
     if(isConfig && data == 17)
     {
       digitalWrite(REVERSEPIN, LOW);
-      Serial.println("reverse low");      
-    }    
-
+      if(debug>0)
+        Serial.println("reverse low");      
+    }     
+    else
     if(isConfig && data == 18)
     {
       digitalWrite(ILLUMINATEPIN, HIGH);
-      Serial.println("ILUMINATEPIN high");      
+      if(debug>0)
+        Serial.println("ILUMINATEPIN high");      
     }    
-
+    else
     if(isConfig && data == 19)
     {
       digitalWrite(ILLUMINATEPIN, LOW);
-      Serial.println("ILUMINATEPIN low");      
+      if(debug>0)
+        Serial.println("ILUMINATEPIN low");       
     }    
-        
+    else    
     if(data > 0 && data <= 99)
     {
       confPressedTime = millis();
       currentButton = data;
       currentButton = data > 40 ? data - 40 : data;
       pressTime = data > 40 ? 1 : 1500;
-      }    
+    }    
 
-      sT = millis();
+    sT = millis();
   }
 
   if(currentButton > 0 && millis() - confPressedTime > pressTime)
@@ -143,30 +166,33 @@ void loop()
   // обработка шины автомобиля
   if (mcp2515.readMessage(&canMsg) == MCP2515::ERROR_OK && !isConfig) 
   {    
+    if(debug>1)
+      log(canMsg);
+
     // состояние дверей
     if(canMsg.can_id == 0x220)
     {  
       State.DoorsState = canMsg.data[0];
       State.ThreeDoors = canMsg.data[1] >> 7 > 0;
     }
-    
+    else
     // сообщение
     if(canMsg.can_id == 0x18)
     {  
       //passenger_airbag_state = (canMsg.data[0] >> 7) == 1;
     }
-    
+    else
     // сообщение
     if(canMsg.can_id == 0x1A1)
     {  
     }
-    
+    else
     // бортовые компьютеры
     if(canMsg.can_id == 0x221 || canMsg.can_id == 0x261 || canMsg.can_id == 0x2A1)
     {
       //bool trip_btn_pressed = canMsg.can_id == 0x221 && (canMsg.data[0] & 0x0F) == 0x08;   
     }
-    
+    else
     // блок конпок, основной
     if(canMsg.can_id == 0x21F && canMsg.can_dlc == 3)
     {
@@ -205,12 +231,15 @@ void loop()
       {
         currentButton = 4;      
       }
-            
-      log(canMsg);
-      Serial.print("Btn "); Serial.println(currentButton);  
-      Serial.print("Scr1 "); Serial.println(prevScroll); 
+      if(debug>0)
+      {            
+        if(debug == 1)
+          log(canMsg);
+        Serial.print("Btn "); Serial.println(currentButton);  
+        Serial.print("Scr1 "); Serial.println(prevScroll); 
+      }
     }
-
+    else
     // второй набор кнопок
     if(canMsg.can_id == 0xA2 && canMsg.can_dlc == 5)
     {
@@ -251,11 +280,15 @@ void loop()
         currentButton = 13;      
       }
 
-      log(canMsg);
-      Serial.print("Btn2 "); Serial.println(currentButton);  
-      Serial.print("Scr2 "); Serial.println(prevScroll2); 
+      if(debug>0)
+      {
+        if(debug == 1)
+          log(canMsg);
+        Serial.print("Btn2 "); Serial.println(currentButton);  
+        Serial.print("Scr2 "); Serial.println(prevScroll2); 
+      }
     }    
-
+    else
     // задний ход все верно
     if(canMsg.can_id == 0xF6 && canMsg.can_dlc == 8)
     {   
@@ -275,15 +308,20 @@ void loop()
             digitalWrite(REVERSEPIN, LOW);          
           }
         }
-                
-      log(canMsg);    
-      Serial.print("Reverse "); Serial.println(prevReverse);
-    }    
 
+      if(debug>0) 
+      { 
+        if(debug == 1)          
+          log(canMsg);    
+        Serial.print("Reverse "); Serial.println(prevReverse);
+      }
+    }    
+    else
     // время, для обработки подсветки
     if(canMsg.can_id == 0x3f6 && canMsg.can_dlc == 7)
     {
-      log(canMsg);
+      if(debug == 1)
+        log(canMsg);
       int day = ((canMsg.data[3] & 0b00001111) << 4) + (canMsg.data[4] >> 4) + 1;
       int month = canMsg.data[4] & 0b00001111 + 1;
       int year = canMsg.data[5] + 2000 + 1;
@@ -308,14 +346,16 @@ void loop()
         }        
       }
 
-       Serial.print("Illuminate "); Serial.print(prevIlluminate); Serial.print("Date "); Serial.print(day); Serial.print("."); Serial.print(month); Serial.print("."); Serial.print(year); Serial.print(" Time "); Serial.println(currentTime);  
+      if(debug>0)
+      { 
+        Serial.print("Illuminate "); Serial.print(prevIlluminate); Serial.print("Date "); Serial.print(day); Serial.print("."); Serial.print(month); Serial.print("."); Serial.print(year); Serial.print(" Time "); Serial.println(currentTime);  
+      }
     }
  }
   
   // если необходимо - нажимаем кнопку
   if(currentButton != prevButton)
   {
-    Serial.println(millis() - prevChangeButtonState);
     if( millis() - prevChangeButtonState >= buttonDelay)
     {
       pressButton(currentButton);
@@ -336,8 +376,6 @@ void loop()
     // долгое нажатие
     if(currentButton > 0)
     {
-          Serial.println("long");
-
       prevChangeButtonState = millis();
     }
     else
@@ -353,12 +391,10 @@ void pressButton(int value)
   if(value == 0)
   {
     setResistance(0);
-  Serial.println("rel");
   }
   else
   {
     setResistance(value);
-    Serial.println("press");
   }
 }
 
@@ -380,6 +416,6 @@ void log(struct can_frame can)
 // изменить сопротивление для резистивных кнопок
 void setResistance(int percent) 
 { 
-//      pot.set(99);
+     //pot.set(99);
       if(percent>0)pot.set(percent*2); else pot.set(99);
 }
