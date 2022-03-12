@@ -8,7 +8,7 @@
       radioState.can_id = 0x165;
       radioState.can_dlc = 4;
       radioState.data[0] = 204;
-      radioState.data[1] = 160;
+      radioState.data[1] = 128;//+64;//60;
       radioState.data[2] = 64;
       radioState.data[3] = 0;
       
@@ -46,6 +46,17 @@
         sender->sendMessage(&radioSettings);
         sender->sendMessage(&radioLevel);    
         last500 = now;
+
+              struct can_frame radioInit;
+      radioInit.can_id = 0x39b;
+      radioInit.can_dlc = 5;
+      radioInit.data[0] = 0xf4;
+      radioInit.data[1] = 0x05;
+      radioInit.data[2] = 0x0c;
+      radioInit.data[3] = 0x14;
+      radioInit.data[4] = 0x1e;
+      sender->sendMessage(&radioInit);
+
       }
     }
 
@@ -53,7 +64,7 @@
     {
       struct can_frame radioInit;
       radioInit.can_id = 0x5E0;
-      radioInit.can_dlc = 7;
+      radioInit.can_dlc = 8;
       radioInit.data[0] = 0x20;
       radioInit.data[1] = 0x01;
       radioInit.data[2] = 0x02;

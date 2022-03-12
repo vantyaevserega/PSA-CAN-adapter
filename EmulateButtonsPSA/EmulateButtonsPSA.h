@@ -33,11 +33,12 @@ class EmulateButtonsPSA
     struct can_frame data1;
 
     struct can_frame data2;
-    
-    unsigned long last100;
-    
-    PSA_BUTTON current;
+          struct can_frame data3;  
 
+    unsigned long last100;
+        unsigned long last;
+    PSA_BUTTON current;
+    PSA_BUTTON prev;
     MCP2515* sender;
     
     CanFrameLog* loger;

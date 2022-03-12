@@ -53,6 +53,7 @@ void setup()
   mcp2515.setBitrate(CAN_125KBPS, MCP_8MHZ);  
   mcp2515.setNormalMode();
   radio.SetState(true);
+  buttons.SetState(true);
   radio.Init();
 }
 
@@ -116,7 +117,8 @@ void loop()
       car.SetState(false);
     }    
   }
-     
+  
+  buttons.SetButton(currentButton);
   radio.DoWork(now);
   car.DoWork(now);
   buttons.DoWork(now);

@@ -68,8 +68,8 @@ void setup()
   // инициализация резистивных выводов  
   pot.reset();
   pot.set(99);
-  
-  pinMode(REVERSEPIN, OUTPUT);
+  debug = 0
+;  pinMode(REVERSEPIN, OUTPUT);
   pinMode(ILLUMINATEPIN, OUTPUT);
   digitalWrite(REVERSEPIN, LOW); 
   digitalWrite(ILLUMINATEPIN, LOW);
@@ -169,6 +169,16 @@ void loop()
     if(debug>1)
       log(canMsg);
 
+    // кнопки (?)
+    if(canMsg.can_id == 0xED)
+    {
+      if(canMsg.data[0] > 0)   
+      {
+        Serial.print("ED "); 
+        Serial.println(canMsg.data[0]);
+      }
+    }
+    else
     // состояние дверей
     if(canMsg.can_id == 0x220)
     {  
@@ -179,7 +189,7 @@ void loop()
     // сообщение
     if(canMsg.can_id == 0x18)
     {  
-      //passenger_airbag_state = (canMsg.data[0] >> 7) == 1;
+      State.PassengerAirbagState = (canMsg.data[0] >> 7) == 1;
     }
     else
     // сообщение
@@ -194,8 +204,9 @@ void loop()
     }
     else
     // блок конпок, основной
-    if(canMsg.can_id == 0x21F && canMsg.can_dlc == 3)
+    if(canMsg.can_id == 0x21F)// && canMsg.can_dlc == 3)
     {
+      //Serial.println(canMsg.data[0]);
       if(currentButton & 0b111 > 0)
       {
         currentButton = (currentButton >> 3) << 3;
@@ -214,6 +225,7 @@ void loop()
       prevScroll = canMsg.data[1];
       if(canMsg.data[0]  == 4) // volume down
       {
+        Serial.println(canMsg.data[0]);
         currentButton = 1;      
       }
 
@@ -317,8 +329,8 @@ void loop()
       }
     }    
     else
-    // время, для обработки подсветки
-    if(canMsg.can_id == 0x3f6 && canMsg.can_dlc == 7)
+    // время, для обработки подсветки, тут хранится время от начала работы дисплея, параметр бесполезен, чуть более, чем полностью
+    if(canMsg.can_id == 0x3f6 && canMsg.can_dlc == 7 && false)
     {
       if(debug == 1)
         log(canMsg);

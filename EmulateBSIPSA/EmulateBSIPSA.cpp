@@ -109,6 +109,7 @@
       if(now - last500 >= 500 )
       {
         sender->sendMessage(&data2);
+                sender->sendMessage(&data_time);
         last500 = now;
       }
     }
