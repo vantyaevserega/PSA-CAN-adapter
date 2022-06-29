@@ -388,6 +388,13 @@ void loop()
   
     if(set0 > 0 && now >= set0)
     {
+      up.currentState   = up.previousState = false;
+      down.currentState = down.previousState = false;
+      mute.currentState = mute.previousState = false;
+      next.currentState = next.previousState = false;
+      prev.currentState = prev.previousState = false;
+      forward.currentState = forward.previousState = false;
+      
       set0 = 0;
       setResistance(0);
       if(debug>0)
@@ -424,7 +431,9 @@ button handleButtonState(unsigned long now, button state, byte value)
       Serial.print("key ");      
       Serial.print(value);      
       Serial.println(" was down");      
-    }  
+    }
+
+    state.previousState = true;
   }
 
   if(!state.currentState && state.previousState)
@@ -449,9 +458,11 @@ button handleButtonState(unsigned long now, button state, byte value)
         Serial.println(" was up.");   
       }
     }
-  }
 
-  state.previousState = state.currentState;  
+    state.previousState = false;
+  }  
+
+  return state;
 }
 
 // нажатие кнопки через шину
