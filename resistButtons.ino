@@ -12,16 +12,29 @@
 #define ILLUMINATEPIN 9
 #define MCP2515_CS 10
 
-struct button {
+#define DOWN_BUTTON 0
+#define UP_BUTTON 1
+#define MUTE_BUTTON 2
+#define FORWARD_BUTTON 3
+#define PREV_BUTTON 4
+#define NEXT_BUTTON 5
+
+struct button 
+{
     bool currentState;
     bool previousState;
     bool isLong;
     unsigned long downTime;
+    byte value;
+    byte longValue;
+    char name;
+    char longName;
 };
 
 // обработка кнопок
 #define buttonDelay 150
 #define buttonDelayLong 500
+#define buttonConfigDelay 1500
 
 // шина для обшения с авто
 MCP2515 mcp2515(MCP2515_CS);
@@ -51,7 +64,7 @@ int prevButton;
 
 
 unsigned long set0;
-button forward, up, down, mute, next, prev;
+button resistButtons[6];
 
 void setup() 
 {
@@ -73,6 +86,31 @@ void setup()
   digitalWrite(REVERSEPIN, HIGH); 
   digitalWrite(ILLUMINATEPIN, HIGH);
 
+  resistButtons[DOWN_BUTTON].value = 1;
+  resistButtons[DOWN_BUTTON].longValue = 9;
+  resistButtons[DOWN_BUTTON].name = 'v';
+  resistButtons[DOWN_BUTTON].longName = 'q';
+  resistButtons[UP_BUTTON].value = 2;
+  resistButtons[UP_BUTTON].longValue = 12;
+  resistButtons[UP_BUTTON].name = 'V';
+  resistButtons[UP_BUTTON].longName = 'Q';
+  resistButtons[MUTE_BUTTON].value = 3;
+  resistButtons[MUTE_BUTTON].longValue = 15;
+  resistButtons[MUTE_BUTTON].name = 'm';
+  resistButtons[MUTE_BUTTON].longName = 'w';
+  resistButtons[FORWARD_BUTTON].value = 4;
+  resistButtons[FORWARD_BUTTON].longValue = 18;
+  resistButtons[FORWARD_BUTTON].name = 'n';
+  resistButtons[FORWARD_BUTTON].longName = 'W';
+  resistButtons[PREV_BUTTON].value = 5;
+  resistButtons[PREV_BUTTON].longValue = 5;
+  resistButtons[PREV_BUTTON].name = 't';
+  resistButtons[PREV_BUTTON].longName = 'e';
+  resistButtons[NEXT_BUTTON].value = 6;
+  resistButtons[NEXT_BUTTON].longValue = 6;
+  resistButtons[NEXT_BUTTON].name = 'T';
+  resistButtons[NEXT_BUTTON].longName = 'E';
+
   // инициализация эмуляции кнопок
   buttons.SetState(true);
 
@@ -91,6 +129,10 @@ void loop()
     if (data > '0' && data <= '9')
     {
       buttons.SetButton(data - '0');
+      if(debug>0)
+      {
+        Serial.println("Display button pressed");
+      }
     }
     else
     if(data == 'S')
@@ -163,100 +205,45 @@ void loop()
       {
         Serial.println("illuminate on");       
       }  
-    }  
-    else    
-    if(isConfig && data == 'v')
-    {
-      confPressedTime = now;
-      currentButton = 1;
-      pressTime = 1500;
-    }    
-    else    
-    if(isConfig && data == 'V')
-    {
-      confPressedTime = now;
-      currentButton = 2;
-      pressTime = 1500;
-    }    
-    else    
-    if(isConfig && data == 'm')
-    {
-      confPressedTime = now;
-      currentButton = 3;
-      pressTime = 1500;
-    }    
-    else    
-    if(isConfig && data == 'n')
-    {
-      confPressedTime = now;
-      currentButton = 4;
-      pressTime = 1500;
-    }    
-    else    
-    if(isConfig && data == 't')
-    {
-      confPressedTime = now;
-      currentButton = 5;
-      pressTime = 1500;
-    }    
-    else    
-    if(isConfig && data == 'T')
-    {
-      confPressedTime = now;
-      currentButton = 6;
-      pressTime = 1500;
-    }    
+    }
     else    
     if(data == 'l')
     {
       islogenabled = false;
+      if(debug>0)
+      {
+        Serial.println("looging on");       
+      }  
     }    
     else    
     if(data == 'L')
     {
       islogenabled = true;
-    }    
-    else    
-    if(isConfig && data == 'q')
+      if(debug>0)
+      {
+        Serial.println("looging on");       
+      }  
+    }  
+    else   
     {
-      confPressedTime = now;
-      currentButton = 11;
-      pressTime = 1500;
-    }    
-    else    
-    if(isConfig && data == 'Q')
-    {
-      confPressedTime = now;
-      currentButton = 12;
-      pressTime = 1500;
-    }    
-    else    
-    if(isConfig && data == 'w')
-    {
-      confPressedTime = now;
-      currentButton = 13;
-      pressTime = 1500;
-    }    
-    else    
-    if(isConfig && data == 'W')
-    {
-      confPressedTime = now;
-      currentButton = 14;
-      pressTime = 1500;
-    }    
-    else    
-    if(isConfig && data == 'e')
-    {
-      confPressedTime = now;
-      currentButton = 15;
-      pressTime = 1500;
-    }    
-    else    
-    if(isConfig && data == 'E')
-    {
-      confPressedTime = now;
-      currentButton = 16;
-      pressTime = 1500;
+      if(isConfig) 
+      {
+        for(int ind = 0; ind < 6; ++ind)
+        {
+          if(data == resistButtons[ind].name)
+          {
+            confPressedTime = now;
+            currentButton = resistButtons[ind].value;
+            pressTime = buttonConfigDelay;
+          }
+          else if(data == resistButtons[ind].longName)
+          {
+            confPressedTime = now;
+            currentButton = resistButtons[ind].longValue;
+            pressTime = buttonConfigDelay;
+          }            
+        }  
+      }
     }
   }
   
@@ -296,41 +283,40 @@ void loop()
     // блок конпок, основной
     if(canMsg.can_id == 0x21F)
     {  
-      next.currentState = false;
-      prev.currentState = false;
-      down.currentState = false;
-      up.currentState = false;
-      mute.currentState = false;
-      forward.currentState = false;
+      for(int ind = 0; ind < 6; ++ind)
+      {
+        resistButtons[ind].currentState = false;        
+      }  
+
       if(canMsg.data[1] > prevScroll || prevScroll - canMsg.data[1] > 200) // scroll up
       {
-        next.currentState = true;
+        resistButtons[NEXT_BUTTON].currentState = true;
       }  
 
       if(canMsg.data[1] < prevScroll || prevScroll - canMsg.data[1] < -200) // scroll down
       {
-        prev.currentState = true;
+        resistButtons[PREV_BUTTON].currentState = true;
       }  
 
       prevScroll = canMsg.data[1];
       if(canMsg.data[0]  == 4) // volume down
       {
-        down.currentState = true;   
+        resistButtons[DOWN_BUTTON].currentState = true;   
       }
 
       if(canMsg.data[0] == 8) // volume up
       {
-        up.currentState = true; 
+        resistButtons[UP_BUTTON].currentState = true; 
       }
 
       if(canMsg.data[0] == 12) // mute
       {
-        mute.currentState = true;  
+        resistButtons[MUTE_BUTTON].currentState = true;  
       }
 
       if(canMsg.data[0] == 128) // forward
       {
-        forward.currentState = true;   
+        resistButtons[FORWARD_BUTTON].currentState = true;   
       }
     }
     else
@@ -379,21 +365,17 @@ void loop()
 
   if(!isConfig)
   {
-    down    = handleButtonState(now, down, 1);
-    up      = handleButtonState(now, up, 2);
-    mute    = handleButtonState(now, mute, 3);
-    forward = handleButtonState(now, forward, 4);
-    prev    = handleButtonState(now, prev, 5);
-    next    = handleButtonState(now, next, 6);    
+    for(int ind = 0; ind < 6; ++ind)
+    {
+      resistButtons[ind] =  handleButtonState(now, resistButtons[ind]);
+    }
   
     if(set0 > 0 && now >= set0)
     {
-      up.currentState   = up.previousState = false;
-      down.currentState = down.previousState = false;
-      mute.currentState = mute.previousState = false;
-      next.currentState = next.previousState = false;
-      prev.currentState = prev.previousState = false;
-      forward.currentState = forward.previousState = false;
+      for(int ind = 0; ind < 6; ++ind)
+      {
+        resistButtons[ind].currentState =  resistButtons[ind].previousState = false;        
+      }
       
       set0 = 0;
       setResistance(0);
@@ -421,7 +403,7 @@ void pressButton(int value)
 }
 
 // обработка состояния кнопки 
-button handleButtonState(unsigned long now, button state, byte value)
+button handleButtonState(unsigned long now, button state)
 {
   if(state.currentState && !state.previousState)
   {
@@ -429,7 +411,7 @@ button handleButtonState(unsigned long now, button state, byte value)
     if(debug>0)
     {
       Serial.print("key ");      
-      Serial.print(value);      
+      Serial.print(state.value);      
       Serial.println(" was down");      
     }
 
@@ -440,21 +422,21 @@ button handleButtonState(unsigned long now, button state, byte value)
   {
     if(now - state.downTime >= buttonDelayLong)
     {
-      pressButton(10 + value, buttonDelay);
+      pressButton(state.longValue, buttonDelay);
       if(debug>0)
       {
         Serial.print("key ");      
-        Serial.print(value);      
+        Serial.print(state.value);      
         Serial.println(" was up. long");   
       }
     }
     else 
     {
-      pressButton(value, buttonDelay);
+      pressButton(state.value, buttonDelay);
       if(debug>0)
       {
         Serial.print("key ");      
-        Serial.print(value);      
+        Serial.print(state.value);      
         Serial.println(" was up.");   
       }
     }
