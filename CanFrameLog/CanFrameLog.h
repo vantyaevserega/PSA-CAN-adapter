@@ -1,14 +1,16 @@
 #ifndef _CanFrameLog_H_
-//#include <Arduino.h>
+#include <SoftwareSerial.h>
 #include <mcp2515.h>
 #define _CanFrameLog_H_
 
 class CanFrameLog
 {
   public:
-//    CanFrameLog();
+    CanFrameLog(SoftwareSerial* additionalSerial);
     
-    void logMessage(struct can_frame *message);  
+    void logMessage(struct can_frame *message); 
+
+    SoftwareSerial* aSerial; 
 };
 
 #endif

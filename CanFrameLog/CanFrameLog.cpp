@@ -1,9 +1,12 @@
 
 #include "CanFrameLog.h"
 
-//CanFrameLog::CanFrameLog()
-//{  
-//}
+
+
+CanFrameLog::CanFrameLog(SoftwareSerial* additionalSerial)
+{  
+  aSerial = additionalSerial;
+}
 
 void CanFrameLog::logMessage(struct can_frame *message) 
 {
@@ -17,4 +20,15 @@ void CanFrameLog::logMessage(struct can_frame *message)
     }
 
     Serial.println("");
+
+    aSerial->print(message->can_id, HEX); // ID
+    aSerial->print("\t");
+    aSerial->print(message->can_dlc, HEX); // размер
+    for (int i = 0; i<message->can_dlc; i++)  
+    {
+      aSerial->print("\t");
+      aSerial->print(message->data[i], HEX);
+    }
+
+    aSerial->println("");
 }
