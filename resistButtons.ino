@@ -3,11 +3,14 @@
 #include <CanFrameLog.h>
 #include <EmulateButtonsPSA.h>
 #include <SPI.h>
+#include <SoftwareSerial.h>
 
 // используемые пины
 #define XC_CS 2
 #define XC_INC 3
 #define XC_UD 4
+#define HC_TXD 5
+#define HC_RXD 6
 #define REVERSEPIN 8
 #define ILLUMINATEPIN 9
 #define MCP2515_CS 10
@@ -36,6 +39,9 @@ struct button
 #define buttonDelayLong 500
 #define buttonConfigDelay 1500
 
+// связь по bluetooth
+SoftwareSerial btSerial(HC_TXD, HC_RXD);
+
 // шина для обшения с авто
 MCP2515 mcp2515(MCP2515_CS);
 
@@ -43,7 +49,7 @@ MCP2515 mcp2515(MCP2515_CS);
 DigiPot pot(XC_INC,XC_UD,XC_CS);
 
 // логирование пакетов
-CanFrameLog lg;
+CanFrameLog lg(&btSerial);
 
 // эмулятор кнопок БК
 EmulateButtonsPSA buttons(&mcp2515, &lg);
@@ -69,6 +75,8 @@ button resistButtons[6];
 void setup() 
 {
   // инициализация шины bluetooth
+  btSerial.begin(9600);
+
   Serial.begin(9600);
 
   // иницилазиация CAN шины
@@ -122,6 +130,11 @@ void loop()
   // начало обработки цикла
   unsigned long now = millis();
   
+  if (btSerial.available())
+  { 
+    Serial.write(btSerial.read());
+  }
+
   // обработка серийного порта, для конфигурации
   if (Serial.available() > 0) 
   {
@@ -132,6 +145,7 @@ void loop()
       if(debug>0)
       {
         Serial.println("Display button pressed");
+        btSerial.println("Display button pressed");
       }
     }
     else
@@ -155,6 +169,7 @@ void loop()
       if(debug>0)
       {
         Serial.println("Configuration started");
+        btSerial.println("Configuration started");
       }
           
       isConfig = true;
@@ -165,6 +180,7 @@ void loop()
       if(debug>0)
       {
         Serial.println("Configuration finished");
+        btSerial.println("Configuration finished");
       } 
 
       isConfig = false;
@@ -177,6 +193,7 @@ void loop()
       if(debug>0)
       {
         Serial.println("reverse off");   
+        btSerial.println("reverse off");   
       }   
     }    
     else
@@ -185,7 +202,8 @@ void loop()
       digitalWrite(REVERSEPIN, LOW);
       if(debug>0)
       {
-        Serial.println("reverse on");      
+        Serial.println("reverse on"); 
+        btSerial.println("reverse on");       
       }   
     }  
     else
@@ -194,7 +212,8 @@ void loop()
       digitalWrite(ILLUMINATEPIN, HIGH);
       if(debug>0)
       {
-        Serial.println("illuminate off");      
+        Serial.println("illuminate off");  
+        btSerial.println("illuminate off");      
       }  
     }  
     else
@@ -203,7 +222,8 @@ void loop()
       digitalWrite(ILLUMINATEPIN, LOW);
       if(debug>0)
       {
-        Serial.println("illuminate on");       
+        Serial.println("illuminate on");  
+        btSerial.println("illuminate on");       
       }  
     }
     else    
@@ -212,7 +232,8 @@ void loop()
       islogenabled = false;
       if(debug>0)
       {
-        Serial.println("looging on");       
+        Serial.println("looging on");
+        btSerial.println("looging on");        
       }  
     }    
     else    
@@ -221,7 +242,8 @@ void loop()
       islogenabled = true;
       if(debug>0)
       {
-        Serial.println("looging on");       
+        Serial.println("looging on"); 
+        btSerial.println("looging on");      
       }  
     }  
     else   
@@ -256,6 +278,10 @@ void loop()
           Serial.print("config key ");
           Serial.print(currentButton);
           Serial.println(" was up");
+
+          btSerial.print("config key ");
+          btSerial.print(currentButton);
+          btSerial.println(" was up");
         }
 
         currentButton = 0;
@@ -269,6 +295,10 @@ void loop()
       Serial.print("config key ");
       Serial.print(currentButton);
       Serial.println(" was down");
+
+      btSerial.print("config key ");
+      btSerial.print(currentButton);
+      btSerial.println(" was down");
     }
   }
 
@@ -382,6 +412,7 @@ void loop()
       if(debug>0)
       {
         Serial.println("key was up by delay"); 
+        btSerial.println("key was up by delay"); 
       }  
     }
   }
@@ -413,6 +444,10 @@ button handleButtonState(unsigned long now, button state)
       Serial.print("key ");      
       Serial.print(state.value);      
       Serial.println(" was down");      
+
+      btSerial.print("key ");      
+      btSerial.print(state.value);      
+      btSerial.println(" was down");   
     }
 
     state.previousState = true;
@@ -428,6 +463,10 @@ button handleButtonState(unsigned long now, button state)
         Serial.print("key ");      
         Serial.print(state.value);      
         Serial.println(" was up. long");   
+
+        btSerial.print("key ");      
+        btSerial.print(state.value);      
+        btSerial.println(" was up. long");   
       }
     }
     else 
@@ -438,6 +477,10 @@ button handleButtonState(unsigned long now, button state)
         Serial.print("key ");      
         Serial.print(state.value);      
         Serial.println(" was up.");   
+
+        btSerial.print("key ");      
+        btSerial.print(state.value);      
+        btSerial.println(" was up.");   
       }
     }
 
