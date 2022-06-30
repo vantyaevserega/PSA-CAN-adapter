@@ -122,6 +122,7 @@ void setup()
   // инициализация эмуляции кнопок
   buttons.SetState(true);
 
+  btSerial.println("Start work");
   Serial.println("Start work");
 }
 
@@ -129,16 +130,26 @@ void loop()
 {
   // начало обработки цикла
   unsigned long now = millis();
-  
-  if (btSerial.available())
-  { 
-    Serial.write(btSerial.read());
-  }
 
-  // обработка серийного порта, для конфигурации
-  if (Serial.available() > 0) 
+  char data;
+  bool isRead = false;
+  if (btSerial.available() > 0)
+  { 
+    data = btSerial.read();
+    isRead = true;
+  }
+  else
   {
-    char data = Serial.read();
+    if (Serial.available() > 0)
+    { 
+      data = Serial.read();
+      isRead = true;
+    }    
+  }
+  
+  // обработка серийного порта, для конфигурации
+  if (isRead) 
+  {    
     if (data > '0' && data <= '9')
     {
       buttons.SetButton(data - '0');
