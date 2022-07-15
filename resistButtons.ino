@@ -22,6 +22,8 @@
 #define PREV_BUTTON 4
 #define NEXT_BUTTON 5
 
+#define RESENDDISPLAY true
+
 struct buttonProgram {
   bool currentState;
   bool previousState;
@@ -272,6 +274,32 @@ void loop() {
       lg.logMessage(&canMsg);
     }
 
+    // не тестировалось, пересылка пакетов для дисплея. начало
+    if(RESENDDISPLAY)
+    {
+      switch(canMsg.can_id)
+      {
+        case 0x1A1:
+        case 0x220:
+        case 0x221:
+          Serial.print("CAN");
+          Serial.print(canMsg.can_id);
+          Serial.print(canMsg.can_dlc);
+          btSerial.print("CAN");
+          btSerial.print(canMsg.can_id);
+          btSerial.print(canMsg.can_dlc);
+          for(byte id = 0; id < canMsg.can_dlc; ++id)
+          {
+            Serial.print(canMsg.data[id]);
+            btSerial.print(canMsg.data[id]);
+          }
+          
+          Serial.println("E");
+          btSerial.println("E");
+          break;
+      }  
+    }
+
     // блок конпок, основной
     if (canMsg.can_id == 0x21F) {
       for (int ind = 0; ind < 6; ++ind) {
@@ -344,11 +372,11 @@ void loop() {
             programButtons[ind].currentState = false;
           }
           // data[0] - крутилка
-          /* // mode menu
-          if(canMsg.data[1]  == 4)
+          /*
+          if(canMsg.data[1]  == 4) // mode
           {     
           } else
-          if(canMsg.data[1] == 8)
+          if(canMsg.data[1] == 8) // menu
           {     
           } else*/
           if(canMsg.data[1]  == 16) // esc
