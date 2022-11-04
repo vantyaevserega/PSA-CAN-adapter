@@ -15,6 +15,14 @@
 #define ILLUMINATEPIN 9
 #define MCP2515_CS 10
 
+#define GROUNDPIN A0
+#define SIDELIGHTSPIN A1
+#define REARFOGLIGHTSPIN A2
+#define RIGHTLIGHTSPIN A3
+#define LEFTLIGHTSPIN A4
+#define REARLIGHTSPIN A5
+#define STOPLIGHTSPIN A6
+
 #define DOWN_BUTTON 0
 #define UP_BUTTON 1
 #define MUTE_BUTTON 2
@@ -41,6 +49,14 @@ struct button {
   char name;
   char longName;
 };
+
+uint8_t reverseState;
+uint8_t lampStates;
+
+unsigned long prevSpeedTime;
+unsigned long speedTime;
+uint8_t prevSpeed;
+uint8_t speed;
 
 // обработка кнопок
 #define buttonDelay 150
@@ -137,6 +153,14 @@ void setup() {
 
   btSerial.println("Start work");
   Serial.println("Start work");
+
+  pinMode(A0, OUTPUT);
+  pinMode(A1, OUTPUT);
+  pinMode(A2, OUTPUT);
+  pinMode(A3, OUTPUT);
+  pinMode(A4, OUTPUT);
+  pinMode(A5, OUTPUT);
+  pinMode(A6, OUTPUT);
 }
 
 void loop() {
@@ -336,9 +360,17 @@ void loop() {
       {
         resistButtons[FORWARD_BUTTON].currentState = true;
       }
-    } else
+    } else 
+      // скорость
+      if (canMsg.can_id == 0xB6) 
+      {
+        speed = canMsg.data[2];
+        speedTime = now;
+      } else
       // задний ход
       if (canMsg.can_id == 0xF6 && canMsg.can_dlc == 8) {
+        reverseState = canMsg.data[7];
+
         if ((canMsg.data[7] & 0b10000000 && !hiddenReverse) || forceReverse) {
           if (!prevReverse) {
             prevReverse = true;
@@ -353,6 +385,8 @@ void loop() {
       } else
         // яркость
         if (canMsg.can_id == 0x128 && canMsg.can_dlc > 4) {
+          lampStates = canMsg.data[4];
+
           if (canMsg.data[4] & 0b00010000) {
             if (!prevIlluminate) {
               prevIlluminate = true;
@@ -426,6 +460,45 @@ void loop() {
   }
 
   buttons.DoWork(now);
+
+  // режим прицепа
+  if(hiddenReverse)
+  {
+    // масса
+    digitalWrite(GROUNDPIN, LOW);
+
+    // габариты
+    digitalWrite(SIDELIGHTSPIN,    0b10000000 & lampStates ? LOW : HIGH);
+
+    // птф
+    digitalWrite(REARFOGLIGHTSPIN, 0b00001000 & lampStates ? LOW : HIGH);
+    
+    // поворотники
+    digitalWrite(RIGHTLIGHTSPIN,   0b00000100 & lampStates ? LOW : HIGH);
+    digitalWrite(LEFTLIGHTSPIN,    0b00000010 & lampStates ? LOW : HIGH);
+    
+    // задний ход
+    digitalWrite(REARLIGHTSPIN, reverseState & 0b10000000 ? LOW : HIGH);
+
+    // стоп сигналы (?) тут написанно временное решение, считать торможением замедление на 5 км/ч за секунду
+    // надо переделать на нормальное, но еще не отловил
+    if((prevSpeed - speed) / (speedTime - prevSpeedTime) >= 50)
+    {
+      digitalWrite(STOPLIGHTSPIN, LOW);
+    }
+    else
+    {
+      digitalWrite(STOPLIGHTSPIN, HIGH);
+    }
+
+    prevSpeed = speed;
+    prevSpeedTime = speedTime;
+  }
+  else
+  {
+    // масса
+    digitalWrite(GROUNDPIN, HIGH);
+  }  
 }
 
 // нажатие кнопки из настроек
