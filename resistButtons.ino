@@ -361,6 +361,15 @@ void loop() {
         resistButtons[FORWARD_BUTTON].currentState = true;
       }
     } else 
+      // стоп?
+      if (canMsg.can_id == 0x260) 
+      {
+        bool stopState = canMsg.data[5] & 0b000010000;
+      if (stopState) {
+        Serial.println("stop pressed");
+        btSerial.println("stop pressed");
+      }        
+      } else 
       // скорость
       if (canMsg.can_id == 0xB6) 
       {
