@@ -306,20 +306,10 @@ void loop() {
         case 0x1A1:
         case 0x220:
         case 0x221:
-          Serial.print("CAN");
-          Serial.print(canMsg.can_id);
-          Serial.print(canMsg.can_dlc);
-          btSerial.print("CAN");
-          btSerial.print(canMsg.can_id);
-          btSerial.print(canMsg.can_dlc);
-          for(byte id = 0; id < canMsg.can_dlc; ++id)
-          {
-            Serial.print(canMsg.data[id]);
-            btSerial.print(canMsg.data[id]);
-          }
+          Serial.print("CAN ");
+          btSerial.print("CAN ");
           
-          Serial.println("E");
-          btSerial.println("E");
+          lg.logMessage(&canMsg);
           break;
       }  
     }
@@ -361,14 +351,14 @@ void loop() {
         resistButtons[FORWARD_BUTTON].currentState = true;
       }
     } else 
-      // стоп?
-      if (canMsg.can_id == 0x260) 
+      // стоп? - похоже пакета нет
+      if (canMsg.can_id == 0x999) 
       {
-        bool stopState = canMsg.data[5] & 0b000010000;
+        bool stopState = false;
       if (stopState) {
         Serial.println("stop pressed");
         btSerial.println("stop pressed");
-      }        
+      }
       } else 
       // скорость
       if (canMsg.can_id == 0xB6) 
