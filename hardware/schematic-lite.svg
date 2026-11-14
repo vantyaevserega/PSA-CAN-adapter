@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1240 420" width="1240" height="420" font-family="Segoe UI, Arial, sans-serif">
+<rect width="1240" height="420" fill="#ffffff"/>
+<text x="24" y="34" font-size="20" fill="#111" text-anchor="start" font-weight="600">PSA-CAN адаптер — облегчённый вариант (LITE)</text>
+<rect x="150" y="70" width="170" height="119" rx="6" fill="#f5f7fa" stroke="#455a64" stroke-width="1.5"/>
+<path d="M150 98H320" stroke="#455a64" stroke-width="1"/>
+<text x="235.0" y="89" font-size="13.5" fill="#111" text-anchor="middle" font-weight="600">Автомобиль</text>
+<path d="M320 117.0H354" stroke="#2e7d32" stroke-width="2.2"/>
+<circle cx="354" cy="117.0" r="3.2" fill="#2e7d32"/>
+<text x="313" y="121.5" font-size="12.5" fill="#222" text-anchor="end" font-weight="400">CAN-H</text>
+<text x="361" y="121.5" font-size="12.5" fill="#2e7d32" text-anchor="start" font-weight="600">CAN_H</text>
+<path d="M320 143.0H354" stroke="#2e7d32" stroke-width="2.2"/>
+<circle cx="354" cy="143.0" r="3.2" fill="#2e7d32"/>
+<text x="313" y="147.5" font-size="12.5" fill="#222" text-anchor="end" font-weight="400">CAN-L</text>
+<text x="361" y="147.5" font-size="12.5" fill="#2e7d32" text-anchor="start" font-weight="600">CAN_L</text>
+<text x="158" y="176" font-size="11.5" fill="#546e7a" text-anchor="start" font-weight="400">комфортная шина, 125 кбит/с</text>
+<rect x="150" y="230" width="170" height="110" rx="6" fill="#f5f7fa" stroke="#455a64" stroke-width="1.5"/>
+<path d="M150 258H320" stroke="#455a64" stroke-width="1"/>
+<text x="235.0" y="249" font-size="13.5" fill="#111" text-anchor="middle" font-weight="600">Магнитола</text>
+<path d="M320 277.0H354" stroke="#e65100" stroke-width="2.2"/>
+<circle cx="354" cy="277.0" r="3.2" fill="#e65100"/>
+<text x="313" y="281.5" font-size="12.5" fill="#222" text-anchor="end" font-weight="400">USB</text>
+<text x="361" y="281.5" font-size="12.5" fill="#e65100" text-anchor="start" font-weight="600">USB магнитолы</text>
+<text x="158" y="310" font-size="11.5" fill="#546e7a" text-anchor="start" font-weight="400">масса — общая с автомобилем</text>
+<text x="158" y="327" font-size="11.5" fill="#546e7a" text-anchor="start" font-weight="400">через корпус магнитолы</text>
+<rect x="540" y="70" width="190" height="223" rx="6" fill="#f5f7fa" stroke="#455a64" stroke-width="1.5"/>
+<path d="M540 98H730" stroke="#455a64" stroke-width="1"/>
+<text x="635.0" y="89" font-size="13.5" fill="#111" text-anchor="middle" font-weight="600">Arduino Nano</text>
+<path d="M540 117.0H506" stroke="#c62828" stroke-width="2.2"/>
+<circle cx="506" cy="117.0" r="3.2" fill="#c62828"/>
+<text x="547" y="121.5" font-size="12.5" fill="#222" text-anchor="start" font-weight="400">5V</text>
+<text x="499" y="121.5" font-size="12.5" fill="#c62828" text-anchor="end" font-weight="600">+5V</text>
+<path d="M540 143.0H506" stroke="#263238" stroke-width="2.2"/>
+<circle cx="506" cy="143.0" r="3.2" fill="#263238"/>
+<text x="547" y="147.5" font-size="12.5" fill="#222" text-anchor="start" font-weight="400">GND</text>
+<text x="499" y="147.5" font-size="12.5" fill="#263238" text-anchor="end" font-weight="600">GND</text>
+<path d="M540 169.0H506" stroke="#1565c0" stroke-width="2.2"/>
+<circle cx="506" cy="169.0" r="3.2" fill="#1565c0"/>
+<text x="547" y="173.5" font-size="12.5" fill="#222" text-anchor="start" font-weight="400">D10</text>
+<text x="499" y="173.5" font-size="12.5" fill="#1565c0" text-anchor="end" font-weight="600">CAN_CS</text>
+<path d="M540 195.0H506" stroke="#1565c0" stroke-width="2.2"/>
+<circle cx="506" cy="195.0" r="3.2" fill="#1565c0"/>
+<text x="547" y="199.5" font-size="12.5" fill="#222" text-anchor="start" font-weight="400">D11 (MOSI)</text>
+<text x="499" y="199.5" font-size="12.5" fill="#1565c0" text-anchor="end" font-weight="600">MOSI</text>
+<path d="M540 221.0H506" stroke="#1565c0" stroke-width="2.2"/>
+<circle cx="506" cy="221.0" r="3.2" fill="#1565c0"/>
+<text x="547" y="225.5" font-size="12.5" fill="#222" text-anchor="start" font-weight="400">D12 (MISO)</text>
+<text x="499" y="225.5" font-size="12.5" fill="#1565c0" text-anchor="end" font-weight="600">MISO</text>
+<path d="M540 247.0H506" stroke="#1565c0" stroke-width="2.2"/>
+<circle cx="506" cy="247.0" r="3.2" fill="#1565c0"/>
+<text x="547" y="251.5" font-size="12.5" fill="#222" text-anchor="start" font-weight="400">D13 (SCK)</text>
+<text x="499" y="251.5" font-size="12.5" fill="#1565c0" text-anchor="end" font-weight="600">SCK</text>
+<path d="M730 117.0H764" stroke="#e65100" stroke-width="2.2"/>
+<circle cx="764" cy="117.0" r="3.2" fill="#e65100"/>
+<text x="723" y="121.5" font-size="12.5" fill="#222" text-anchor="end" font-weight="400">USB</text>
+<text x="771" y="121.5" font-size="12.5" fill="#e65100" text-anchor="start" font-weight="600">USB магнитолы</text>
+<text x="548" y="280" font-size="11.5" fill="#546e7a" text-anchor="start" font-weight="400">питание — от USB магнитолы</text>
+<rect x="960" y="70" width="170" height="292" rx="6" fill="#f5f7fa" stroke="#455a64" stroke-width="1.5"/>
+<path d="M960 98H1130" stroke="#455a64" stroke-width="1"/>
+<text x="1045.0" y="89" font-size="13.5" fill="#111" text-anchor="middle" font-weight="600">Модуль MCP2515 (8 МГц)</text>
+<path d="M960 117.0H926" stroke="#c62828" stroke-width="2.2"/>
+<circle cx="926" cy="117.0" r="3.2" fill="#c62828"/>
+<text x="967" y="121.5" font-size="12.5" fill="#222" text-anchor="start" font-weight="400">VCC</text>
+<text x="919" y="121.5" font-size="12.5" fill="#c62828" text-anchor="end" font-weight="600">+5V</text>
+<path d="M960 143.0H926" stroke="#263238" stroke-width="2.2"/>
+<circle cx="926" cy="143.0" r="3.2" fill="#263238"/>
+<text x="967" y="147.5" font-size="12.5" fill="#222" text-anchor="start" font-weight="400">GND</text>
+<text x="919" y="147.5" font-size="12.5" fill="#263238" text-anchor="end" font-weight="600">GND</text>
+<path d="M960 169.0H926" stroke="#1565c0" stroke-width="2.2"/>
+<circle cx="926" cy="169.0" r="3.2" fill="#1565c0"/>
+<text x="967" y="173.5" font-size="12.5" fill="#222" text-anchor="start" font-weight="400">CS</text>
+<text x="919" y="173.5" font-size="12.5" fill="#1565c0" text-anchor="end" font-weight="600">CAN_CS</text>
+<path d="M960 195.0H926" stroke="#1565c0" stroke-width="2.2"/>
+<circle cx="926" cy="195.0" r="3.2" fill="#1565c0"/>
+<text x="967" y="199.5" font-size="12.5" fill="#222" text-anchor="start" font-weight="400">SI</text>
+<text x="919" y="199.5" font-size="12.5" fill="#1565c0" text-anchor="end" font-weight="600">MOSI</text>
+<path d="M960 221.0H926" stroke="#1565c0" stroke-width="2.2"/>
+<circle cx="926" cy="221.0" r="3.2" fill="#1565c0"/>
+<text x="967" y="225.5" font-size="12.5" fill="#222" text-anchor="start" font-weight="400">SO</text>
+<text x="919" y="225.5" font-size="12.5" fill="#1565c0" text-anchor="end" font-weight="600">MISO</text>
+<path d="M960 247.0H926" stroke="#1565c0" stroke-width="2.2"/>
+<circle cx="926" cy="247.0" r="3.2" fill="#1565c0"/>
+<text x="967" y="251.5" font-size="12.5" fill="#222" text-anchor="start" font-weight="400">SCK</text>
+<text x="919" y="251.5" font-size="12.5" fill="#1565c0" text-anchor="end" font-weight="600">SCK</text>
+<path d="M960 273.0H926" stroke="#2e7d32" stroke-width="2.2"/>
+<circle cx="926" cy="273.0" r="3.2" fill="#2e7d32"/>
+<text x="967" y="277.5" font-size="12.5" fill="#222" text-anchor="start" font-weight="400">H</text>
+<text x="919" y="277.5" font-size="12.5" fill="#2e7d32" text-anchor="end" font-weight="600">CAN_H</text>
+<path d="M960 299.0H926" stroke="#2e7d32" stroke-width="2.2"/>
+<circle cx="926" cy="299.0" r="3.2" fill="#2e7d32"/>
+<text x="967" y="303.5" font-size="12.5" fill="#222" text-anchor="start" font-weight="400">L</text>
+<text x="919" y="303.5" font-size="12.5" fill="#2e7d32" text-anchor="end" font-weight="600">CAN_L</text>
+<text x="968" y="332" font-size="11.5" fill="#546e7a" text-anchor="start" font-weight="400">перемычку J1 (120 Ом) снять</text>
+<text x="968" y="349" font-size="11.5" fill="#546e7a" text-anchor="start" font-weight="400">INT не подключён</text>
+<text x="24" y="380" font-size="12.5" fill="#37474f" text-anchor="start" font-weight="400">Одинаковые метки цепей соединяются между собой. Кнопки руля, задний ход и подсветка уходят в USB строками KEY / STATE (docs/PROTOCOL.md).</text>
+</svg>
