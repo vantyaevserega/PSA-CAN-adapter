@@ -10,8 +10,9 @@
 //                кнопки, задний ход и подсветка уходят в порт строками KEY / STATE.
 #define VARIANT_FULL 1
 #define VARIANT_LITE 2
+// По умолчанию — LITE (собранная плата: Nano + MCP2515 от USB магнитолы). FULL: собрать с -DVARIANT=1.
 #ifndef VARIANT
-#define VARIANT VARIANT_FULL
+#define VARIANT VARIANT_LITE
 #endif
 
 // ---------- Состав железа ----------
@@ -79,3 +80,14 @@
   { 0x2A1, 1000 }  /* БК: поездка 2 */
 
 #define FORWARD_REFRESH_MS 2000
+
+// ---------- Аппаратный фильтр MCP2515 ----------
+// Лишнюю шину отсекает сам MCP2515 — Nano не тратит время на SPI и не теряет нужные пакеты
+// при всплесках трафика (приёмных буферов у чипа всего два).
+//  - буфер 0: кнопки (ID_WHEEL_KEYS, ID_MENU_KEYS), точное совпадение;
+//  - буфер 1: пересылаемые пакеты, сравниваются только биты CAN_RX_GROUP_MASK.
+// Каждый ID из FORWARDED_FRAMES, а также ID_REVERSE и ID_LAMPS обязан совпасть с одним из
+// CAN_RX_GROUP_FILTERS — иначе сборка остановится (проверка в CanFilters.h).
+// Команды L и F (вся шина в порт) на время своей работы фильтр открывают.
+#define CAN_RX_GROUP_MASK 0x03F
+#define CAN_RX_GROUP_FILTERS 0x036, 0x028, 0x021, 0x020

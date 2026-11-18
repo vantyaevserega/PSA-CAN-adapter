@@ -10,6 +10,7 @@
 #include <mcp2515.h>
 #include <PsaPanelButtons.h>
 
+#include "CanFilters.h"
 #include "Config.h"
 #include "FrameForwarder.h"
 #include "Keys.h"
@@ -34,6 +35,7 @@ bool illumination;   // подсветка по шине
 bool reverseOut;     // сигнал «задний ход» для магнитолы
 bool illuminationOut;  // сигнал «подсветка» для магнитолы
 bool resistiveKeys = USE_RESISTIVE_KEYS;  // нажимать кнопки на проводе KEY (команды K / k)
+bool canOk;          // MCP2515 ответил при старте
 
 void setup() {
 #if USE_OUTPUTS
@@ -46,9 +48,9 @@ void setup() {
 
   out.begin();
 
-  can.reset();
-  can.setBitrate(CAN_SPEED, CAN_CLOCK);
-  can.setNormalMode();
+  // reset/setBitrate отвечают ошибкой, если чип не вышел в режим настройки — модуля нет или SPI не подключён
+  canOk = can.reset() == MCP2515::ERROR_OK && can.setBitrate(CAN_SPEED, CAN_CLOCK) == MCP2515::ERROR_OK;
+  canfilters::apply(can, false);  // только нужные пакеты; заодно включает рабочий режим
 
 #if USE_RESISTIVE_KEYS
   resistive.begin();
@@ -141,6 +143,17 @@ void setOutput(uint8_t pin, bool on) {
 #endif
 }
 
+// Вся шина в порт нужна только логу (L) и отладке уровня 2 (F); иначе — аппаратный фильтр.
+// Фильтр переключается только при смене режима: перенастройка чипа стоит пары пакетов.
+void updateCanFilters() {
+  static bool openedForLog = false;
+  bool all = logAll || debugLevel > 1;
+  if (all != openedForLog) {
+    openedForLog = all;
+    canfilters::apply(can, all);
+  }
+}
+
 // ---------- Кнопки руля ----------
 
 void onKey(Key key, bool isLong) {
@@ -184,16 +197,20 @@ void handleCommand(char command, unsigned long now) {
       break;
     case 'S':
       debugLevel = 0;
+      updateCanFilters();
       break;
     case 'D':
       debugLevel = 1;
+      updateCanFilters();
       break;
     case 'F':
       debugLevel = 2;
+      updateCanFilters();
       break;
     case 'L':
     case 'l':
       logAll = command == 'L';
+      updateCanFilters();
       debug(logAll ? F("logging on") : F("logging off"));
       break;
     case 'R':
@@ -273,6 +290,9 @@ void printInfo() {
   printSwitch(F("MODE KEYWIRE"), resistiveKeys);
   printSwitch(F("STATE REVERSE"), reverseOut);
   printSwitch(F("STATE ILLUMINATION"), illuminationOut);
+  if (!canOk) {
+    out.println(F("# CAN: MCP2515 не отвечает — проверьте питание модуля и провода SPI (D10-D13)"));
+  }
 }
 
 void printSwitch(const __FlashStringHelper* name, bool on) {
